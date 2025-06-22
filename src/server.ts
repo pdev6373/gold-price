@@ -563,8 +563,8 @@ app.get('/api/gold/fluctuation', async (req: Request, res: Response) => {
         gold: {
           startPrice,
           endPrice,
-          change,
-          changePercent,
+          change: formatToDecimal(change),
+          changePercent: formatToDecimal(changePercent),
         },
       },
       cached: cache.has(`historical_${timeframe}`),
