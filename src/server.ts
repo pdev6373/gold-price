@@ -77,12 +77,12 @@ interface FMPQuote {
 
 interface GoldDataPoint {
   date: string;
-  price: number;
+  price: number | string;
   displayDate: string;
   open: number;
   high: number;
   low: number;
-  close: number;
+  close: number | string;
 }
 
 interface GoldPriceResponse {
@@ -200,6 +200,12 @@ const convertPrice = (pricePerOz: number, targetUnit: WeightUnit): number => {
   const conversionFactor = UNIT_CONVERSIONS[targetUnit];
   return Math.round((pricePerOz / conversionFactor) * 100) / 100;
 };
+
+const formatToDecimal = (value: number | string) =>
+  Number(value).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
 // Helper function to get unit label
 const getUnitLabel = (unit: WeightUnit): string => {
@@ -429,7 +435,7 @@ app.get('/api/gold/current', async (req: Request, res: Response) => {
       success: true,
       data: {
         gold: {
-          price: convertedPrice,
+          price: formatToDecimal(convertedPrice),
           currency: 'USD',
           unit: getUnitLabel(targetUnit),
           unitCode: targetUnit,
@@ -474,12 +480,12 @@ app.get('/api/gold/historical', async (req: Request, res: Response) => {
     const chartData: GoldDataPoint[] = historicalData
       .map((item) => ({
         date: item.date,
-        price: convertPrice(item.close, targetUnit),
+        price: formatToDecimal(convertPrice(item.close, targetUnit)),
         displayDate: new Date(item.date).toLocaleDateString(),
         open: convertPrice(item.open, targetUnit),
         high: convertPrice(item.high, targetUnit),
         low: convertPrice(item.low, targetUnit),
-        close: convertPrice(item.close, targetUnit),
+        close: formatToDecimal(convertPrice(item.close, targetUnit)),
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -487,14 +493,14 @@ app.get('/api/gold/historical', async (req: Request, res: Response) => {
     let percentChange = 0;
 
     if (chartData.length > 1) {
-      const firstPrice = chartData[0].price;
-      const lastPrice = chartData[chartData.length - 1].price;
+      const firstPrice = chartData[0].price as number;
+      const lastPrice = chartData[chartData.length - 1].price as number;
       priceChange = Math.round((lastPrice - firstPrice) * 100) / 100;
       percentChange = Math.round((priceChange / firstPrice) * 100 * 100) / 100;
     }
 
     const responseData: GoldPriceResponse = {
-      currentPrice: chartData[chartData.length - 1]?.price || 0,
+      currentPrice: (chartData[chartData.length - 1]?.price as number) || 0,
       priceChange,
       percentChange,
       data: chartData,
