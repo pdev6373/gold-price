@@ -77,12 +77,12 @@ interface FMPQuote {
 
 interface GoldDataPoint {
   date: string;
-  price: number | string;
+  price: number;
   displayDate: string;
   open: number;
   high: number;
   low: number;
-  close: number | string;
+  close: number;
 }
 
 interface GoldPriceResponse {
@@ -200,12 +200,6 @@ const convertPrice = (pricePerOz: number, targetUnit: WeightUnit): number => {
   const conversionFactor = UNIT_CONVERSIONS[targetUnit];
   return Math.round((pricePerOz / conversionFactor) * 100) / 100;
 };
-
-const formatToDecimal = (value: number | string) =>
-  Number(value).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 
 // Helper function to get unit label
 const getUnitLabel = (unit: WeightUnit): string => {
@@ -435,7 +429,7 @@ app.get('/api/gold/current', async (req: Request, res: Response) => {
       success: true,
       data: {
         gold: {
-          price: formatToDecimal(convertedPrice),
+          price: convertedPrice,
           currency: 'USD',
           unit: getUnitLabel(targetUnit),
           unitCode: targetUnit,
@@ -480,12 +474,12 @@ app.get('/api/gold/historical', async (req: Request, res: Response) => {
     const chartData: GoldDataPoint[] = historicalData
       .map((item) => ({
         date: item.date,
-        price: formatToDecimal(convertPrice(item.close, targetUnit)),
+        price: convertPrice(item.close, targetUnit),
         displayDate: new Date(item.date).toLocaleDateString(),
         open: convertPrice(item.open, targetUnit),
         high: convertPrice(item.high, targetUnit),
         low: convertPrice(item.low, targetUnit),
-        close: formatToDecimal(convertPrice(item.close, targetUnit)),
+        close: convertPrice(item.close, targetUnit),
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -563,8 +557,8 @@ app.get('/api/gold/fluctuation', async (req: Request, res: Response) => {
         gold: {
           startPrice,
           endPrice,
-          change: formatToDecimal(change),
-          changePercent: formatToDecimal(changePercent),
+          change: change,
+          changePercent: changePercent,
         },
       },
       cached: cache.has(`historical_${timeframe}`),
